@@ -1,37 +1,37 @@
-const express = require("express");
-const fetch = require("node-fetch");
+import express from 'express';
+import fetch from 'node-fetch';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
+const STRATZ_TOKEN = process.env.STRATZ_TOKEN; // Добавь переменную окружения STRATZ_TOKEN
 
-const STRATZ_API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJTdWJqZWN0IjoiNGQzZWZkNmEtMjk2ZS00NDExLTkzYzItNDUzMTdjZGUxY2I1IiwiU3RlYW1JZCI6IjE0NDczMzQyOCIsIkFQSVVzZXIiOiJ0cnVlIiwibmJmIjoxNzU0MTQ5OTA2LCJleHAiOjE3ODU2ODU5MDYsImlhdCI6MTc1NDE0OTkwNiwiaXNzIjoiaHR0cHM6Ly9hcGkuc3RyYXR6LmNvbSJ9.eCUIrN44qvmccR92xlqzDSnlfCKMurB-QMaFoj72Pn8";
+app.use(express.json());
 
-function steam64To32(steam64) {
-  const steam64n = BigInt(steam64);
-  const steam32 = steam64n - 76561197960265728n;
-  return steam32.toString();
-}
-
-app.get("/player/:steamId64", async (req, res) => {
+app.get('/api/*', async (req, res) => {
+  const stratzUrl = `https://api.stratz.com/${req.params[0]}`;
   try {
-    const steamId64 = req.params.steamId64;
-    const steamId32 = steam64To32(steamId64);
-
-    const response = await fetch(`https://api.stratz.com/api/v1/Player/${steamId32}`, {
+    const response = await fetch(stratzUrl, {
       headers: {
-        Authorization: `Bearer ${STRATZ_API_TOKEN}`,
+        Authorization: `Bearer ${STRATZ_TOKEN}`,
+        'Content-Type': 'application/json',
       },
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return res.status(response.status).json({ error: "Stratz API Error", details: errorText });
+      const text = await response.text();
+      return res.status(response.status).json({
+        error: 'Stratz API Error',
+        details: text,
+      });
     }
 
     const data = await response.json();
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error", details: err.message });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Proxy Server Error',
+      details: error.message,
+    });
   }
 });
 
